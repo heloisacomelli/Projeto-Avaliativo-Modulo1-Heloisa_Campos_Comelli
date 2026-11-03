@@ -3,6 +3,7 @@ import gdown
 from banco import conectar, executar, inserir_em_lote
 from config import PASTA_DADOS, DRIVE_FILE_ID, TAMANHO_BLOCO, CSV_SEPARADOR, CSV_ENCODING, ARQUIVOS
 import pandas as pd
+import os
 
 #====================================================================================================
 # Cria a pasta 'data', baixa o arquivo ZIP do Google Drive e extrai os arquivos CSV para dentro dela
@@ -130,3 +131,85 @@ MAPEAMENTOS = {
     "trecho": MAP_TRECHO
 }
 
+def carregar_csv(tipo_arquivo):
+    """
+    Realiza a carga dos dados de um arquivo CSV para sua respectiva tabela RAW no PostgreSQL, utilizando inserção em lotes.
+    """
+
+    arquivo = ARQUIVOS[tipo_arquivo]
+    nome_csv = arquivo["csv"]
+    nome_csv = os.path.join("data", nome_csv)
+    tabela = arquivo["tabela_raw"]
+    mapeamento = MAPEAMENTOS[tipo_arquivo]
+
+    colunas_csv = list(mapeamento.keys())
+    colunas_postgres = list(mapeamento.values())
+
+    # Monta o comando INSERT
+    campos = ", ".join(f'"{coluna}"' for coluna in colunas_postgres)
+    valores = ", ".join(["%s"] * len(colunas_postgres))
+
+    sql_insert = f"""
+        INSERT INTO {tabela} ({campos})
+        VALUES ({valores})
+    """
+
+    conexao = conectar()
+    total_registros = 0
+
+    try:
+        cursor = conexao.cursor()
+        
+        print(f"Limpando tabela {tabela}...")
+        cursor.execute(f"TRUNCATE TABLE {tabela}")
+        conexao.commit()
+        cursor.close()
+
+        for df in pd.read_csv(
+            nome_csv,
+            sep=CSV_SEPARADOR,
+            encoding=CSV_ENCODING,
+            chunksize=TAMANHO_BLOCO,
+            dtype=str,
+            keep_default_na=False,
+            na_filter=False
+        ):
+
+            # Remove espaços extras no início e no final dos nomes das colunas
+            df.columns = df.columns.str.strip()
+
+            faltando = set(colunas_csv) - set(df.columns)
+
+            if faltando:
+                raise ValueError(f"Colunas não encontradas no arquivo {nome_csv}: {faltando}")
+
+            df = df[colunas_csv]
+            df = df.rename(columns=mapeamento)
+
+            # Converte o DataFrame em lista de tuplas
+            linhas = list(df.itertuples(index=False, name=None))
+
+            inserir_em_lote(conexao, sql_insert, linhas)
+
+            total_registros += len(linhas)
+
+            print(f"{tabela}: {total_registros} registros carregados...")
+
+        print(f"\nCarga finalizada: {tabela}")
+        print(f"Total de registros: {total_registros}")
+
+    except Exception as erro:
+        conexao.rollback()
+        print(f"Erro ao carregar {nome_csv}: {erro}")
+        raise
+
+    finally:
+        conexao.close()
+
+    return total_registros
+
+for tipo_arquivo in ARQUIVOS:
+    print(f"\nIniciando carga: {tipo_arquivo}")
+    carregar_csv(tipo_arquivo)
+
+print("\n Fase 1 concluída com sucesso!")
