@@ -49,3 +49,34 @@ finally:
         cursor.close()
     if conexao:
         conexao.close()
+
+#=====================================================================================
+# Cria as tabelas no banco de dados 'transparencia' usando o script 0_criar_banco.sql
+#=====================================================================================
+
+# Lê o conteúdo do arquivo 0_criar_banco.sql
+with open('0_criar_banco.sql', 'r', encoding='utf-8') as arquivo:
+    sql_tabelas = arquivo.read()
+
+conexao = conectar()
+
+try:
+    # Executa cada comando SQL separadamente
+    comandos = sql_tabelas.split(';')
+
+    for cmd in comandos:
+        cmd = cmd.strip()
+        if cmd and not cmd.startswith('--'):
+            executar(conexao, cmd)
+
+    conexao.commit()
+    print("Tabelas raw e silver criadas com sucesso.")
+
+except Exception as e:
+    print(f"Erro ao criar tabelas: {e}")
+    conexao.rollback()
+    exit(1)
+finally:
+    conexao.close()
+
+print("\n Fase 0 concluída com sucesso!")
