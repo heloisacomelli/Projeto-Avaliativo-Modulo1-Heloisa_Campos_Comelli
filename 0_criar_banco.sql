@@ -113,7 +113,7 @@ CREATE TABLE silver_viagem (
     valor_devolucao DECIMAL(10,2),
     valor_outros_gastos DECIMAL(10,2),
     valor_total DECIMAL(12,2),
-    duracao_viagem INT,
+    duracao_dias INT,
 
     CONSTRAINT chk_valor_diarias 
         CHECK (valor_diarias >= 0)
