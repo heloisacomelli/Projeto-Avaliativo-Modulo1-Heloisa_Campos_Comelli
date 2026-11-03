@@ -1,8 +1,8 @@
 # Cedenciais pessoais
 .env
 
-# Dados brutos
-data/ # Desconsidera a pasta de dados brutos juntamente com a pasta zip e os arquivos csv localizados dentro dela
+# Dados brutos (desconsidera a pasta de dados brutos juntamente com a pasta zip e os arquivos csv localizados dentro dela)
+data/ 
 
 # Pasta criada automaticamente pelo Python para armazenar arquivos compilados
 __pycache__/
