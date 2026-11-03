@@ -2,6 +2,9 @@ import psycopg2
 from banco import conectar, executar
 from config import POSTGRES_CONFIG
 
+#=========================================================================================
+# Cria o banco de dados 'transparencia' com a exclusão prévia do banco caso ele já exista
+#=========================================================================================
 
 def conectar_banco_padrao():
     """
@@ -22,6 +25,16 @@ def conectar_banco_padrao():
 try:
     conexao = conectar_banco_padrao()
     cursor = conexao.cursor()
+
+    # Derruba qualquer outra conexão ativa no banco transparencia
+    print("Encerrando conexões ativas no banco 'transparencia'...")
+    sql_fechar_conexoes = """
+        SELECT pg_terminate_backend(pg_stat_activity.pid)
+        FROM pg_stat_activity
+        WHERE pg_stat_activity.datname = 'transparencia'
+          AND pid <> pg_backend_pid();
+    """
+    executar(conexao, sql_fechar_conexoes)
 
     executar(conexao, "DROP DATABASE IF EXISTS transparencia;")
     print("Criando o banco de dados 'transparencia'...")
