@@ -9,7 +9,6 @@ import os
 # Cria a pasta 'data', baixa o arquivo ZIP do Google Drive e extrai os arquivos CSV para dentro dela
 #====================================================================================================
 
-
 def baixar_e_extrair_zip(file_id, nome_zip="viagens_2025_6meses.zip"):
     """Baixa um arquivo .zip do Google Drive via ID e extrai seu conteúdo na pasta 'data'."""
 
