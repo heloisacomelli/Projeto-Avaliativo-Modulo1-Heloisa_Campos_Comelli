@@ -174,10 +174,10 @@ CREATE TABLE silver_trecho (
     numero_diarias DECIMAL(10,2),
    
     CONSTRAINT fk_trecho_viagem
-        FOREIGN KEY (id_viagem) REFERENCES silver_viagem(id_viagem)
+        FOREIGN KEY (id_viagem) REFERENCES silver_viagem(id_viagem),
 
     CONSTRAINT chk_numero_diarias 
-        CHECK (numero_diarias >= 0)
+        CHECK (numero_diarias >= 0),
 
     CONSTRAINT uq_viagem_sequencia
     UNIQUE (id_viagem, sequencia_trecho)
